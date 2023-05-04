@@ -42,7 +42,6 @@ type InterfaceConfig struct {
 	MessageMetrics          *MessageMetrics
 	version                 string
 	caPool                  *cert.NebulaCAPool
-	disconnectInvalid       bool
 	relayManager            *relayManager
 	punchy                  *Punchy
 
@@ -68,7 +67,7 @@ type Interface struct {
 	dropMulticast      bool
 	routines           int
 	caPool             *cert.NebulaCAPool
-	disconnectInvalid  bool
+	disconnectInvalid  atomic.Bool
 	closed             atomic.Bool
 	relayManager       *relayManager
 
@@ -170,7 +169,6 @@ func NewInterface(ctx context.Context, c *InterfaceConfig) (*Interface, error) {
 		writers:            make([]*udp.Conn, c.routines),
 		readers:            make([]io.ReadWriteCloser, c.routines),
 		caPool:             c.caPool,
-		disconnectInvalid:  c.disconnectInvalid,
 		myVpnIp:            myVpnIp,
 		relayManager:       c.relayManager,
 
@@ -287,8 +285,19 @@ func (f *Interface) RegisterConfigChangeCallbacks(c *config.C) {
 	c.RegisterReloadCallback(f.reloadCertKey)
 	c.RegisterReloadCallback(f.reloadFirewall)
 	c.RegisterReloadCallback(f.reloadSendRecvError)
+	c.RegisterReloadCallback(f.reloadDisconnectInvalid)
 	for _, udpConn := range f.writers {
 		c.RegisterReloadCallback(udpConn.ReloadConfig)
+	}
+}
+
+func (f *Interface) reloadDisconnectInvalid(c *config.C) {
+	initial := c.InitialLoad()
+	if initial || c.HasChanged("pki.disconnect_invalid") {
+		f.disconnectInvalid.Store(c.GetBool("pki.disconnect_invalid", true))
+		if !initial {
+			f.l.Infof("pki.disconnect_invalid changed to %v", f.disconnectInvalid.Load())
+		}
 	}
 }
 

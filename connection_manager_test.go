@@ -250,16 +250,16 @@ func Test_NewConnectionManagerTest_DisconnectInvalid(t *testing.T) {
 
 	lh := newTestLighthouse()
 	ifce := &Interface{
-		hostMap:           hostMap,
-		inside:            &test.NoopTun{},
-		outside:           &udp.Conn{},
-		firewall:          &Firewall{},
-		lightHouse:        lh,
-		handshakeManager:  NewHandshakeManager(l, vpncidr, preferredRanges, hostMap, lh, &udp.Conn{}, defaultHandshakeConfig),
-		l:                 l,
-		disconnectInvalid: true,
-		caPool:            ncp,
+		hostMap:          hostMap,
+		inside:           &test.NoopTun{},
+		outside:          &udp.Conn{},
+		firewall:         &Firewall{},
+		lightHouse:       lh,
+		handshakeManager: NewHandshakeManager(l, vpncidr, preferredRanges, hostMap, lh, &udp.Conn{}, defaultHandshakeConfig),
+		l:                l,
+		caPool:           ncp,
 	}
+	ifce.disconnectInvalid.Store(true)
 	ifce.certState.Store(cs)
 
 	// Create manager

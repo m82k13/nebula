@@ -288,7 +288,6 @@ func Main(c *config.C, configTest bool, buildVersion string, logger *logrus.Logg
 		MessageMetrics:          messageMetrics,
 		version:                 buildVersion,
 		caPool:                  caPool,
-		disconnectInvalid:       c.GetBool("pki.disconnect_invalid", false),
 		relayManager:            NewRelayManager(ctx, l, hostMap, c),
 		punchy:                  punchy,
 
@@ -318,6 +317,7 @@ func Main(c *config.C, configTest bool, buildVersion string, logger *logrus.Logg
 
 		ifce.RegisterConfigChangeCallbacks(c)
 
+		ifce.reloadDisconnectInvalid(c)
 		ifce.reloadSendRecvError(c)
 
 		go handshakeManager.Run(ctx, ifce)
